@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Shrikhand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  <!-- Include jQuery -->
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            padding: 20px;
+            background-size: cover;  
+            background-position: center center; 
+            background-repeat: no-repeat;  
+            background-color: #fff9f0
+        }
+
+        h1 {
+            font-family: 'Shrikhand', sans-serif;  
+            text-align: center; 
+            font-size: 3em;  
+            color: #d1b9dc;  
+            text-shadow: 2px 2px 4px #000000; 
+        }
+
+        #calendar-container {
+            padding: 2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #fff9f0;
+        }
+
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);  /* 7 columns for each day of the week */
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .day {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            min-height: 80px;
+            position: relative;
+        }
+
+        .day-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .holiday {
+            background-color: #d1b9dc;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .day-number {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .today {
+            background-color: #333;
+            font-style: bold;
+        }
+
+        .empty {
+            visibility: hidden;
+        }
+
+        #month-year {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .navigation-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;  
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .btn {
+            font-family: 'DM Sans', sans-serif;
+            padding: 5px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Holiday Calendar for 2023</h1>
+
+   <!-- Search Form -->
+   <input type="text" id="searchInput" placeholder="Search for a holiday..." onkeyup="searchHolidays()">
+    
+   <div id="calendar-container">
+       <div class="navigation-btns">
+           <button class="btn" onclick="changeMonth(-1)">Previous</button>
+           <div id="month-year"></div>
+           <button class="btn" onclick="changeMonth(1)">Next</button>
+       </div>
+
+       <!-- Calendar Grid -->
+       <div id="calendar"></div>
+   </div>
+
+   <script>
+       // Global variables to track the current month and year
+       let currentMonth = 1;  // January (1-12)
+       let currentYear = 2023;  // Initial year
+
+       let holidays = [];  // Array to hold holidays
+
+       // Function to fetch and update holidays based on search input
+       function searchHolidays() {
+           let searchQuery = document.getElementById("searchInput").value;
+
+           // Perform an AJAX request to the Flask backend with the search query
+           $.ajax({
+               url: '/search',
+               type: 'GET',
+               data: {search: searchQuery},  // Pass the search query as a parameter
+               success: function(response) {
+                   holidays = response;  // Update holidays array with the filtered data
+                   updateCalendar();  // Update the calendar with the new data
+               },
+               error: function(error) {
+                   console.error("Error fetching holidays:", error);
+               }
+           });
+       }
+
+       // Function to update the calendar grid dynamically
+       function updateCalendar() {
+           let calendarContainer = document.getElementById("calendar");
+           calendarContainer.innerHTML = "";  // Clear the existing calendar
+           updateMonthYearLabel();
+
+           // Get the first day of the month and total number of days in the month
+           let firstDay = new Date(currentYear, currentMonth - 1, 1);
+           let lastDay = new Date(currentYear, currentMonth, 0);
+           let daysInMonth = lastDay.getDate();
+
+           let currentDay = firstDay.getDay();  // Get the first weekday of the month (0 = Sunday)
+           
+           // Create empty grid cells for the previous month's overflow days
+           for (let i = 0; i < currentDay; i++) {
+               calendarContainer.innerHTML += '<div class="day empty"></div>';
+           }
+
+           // Generate the days for the current month
+           for (let i = 1; i <= daysInMonth; i++) {
+               let dayElement = document.createElement("div");
+               dayElement.classList.add("day");
+               dayElement.innerHTML = `
+                   <div class="day-name">${getDayName(i)}</div>
+                   <div class="day-number">${i}</div>`;
+
+               // Check if the current day is a holiday
+               holidays.forEach(holiday => {
+                   let holidayDate = new Date(holiday.date);
+                   if (holidayDate.getDate() === i && holidayDate.getMonth() === currentMonth - 1) {
+                       let holidayElement = document.createElement("div");
+                       holidayElement.classList.add("holiday");
+                       holidayElement.innerText = holiday.name;
+                       dayElement.appendChild(holidayElement);
+                   }
+               });
+
+               calendarContainer.appendChild(dayElement);
+           }
+       }
+
+       // Function to return the day name (Sunday, Monday, etc.) based on date
+       function getDayName(date) {
+           const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+           let dateObj = new Date(currentYear, currentMonth - 1, date);  // Create a new date for the given date
+           return days[dateObj.getDay()];
+       }
+
+       // Function to update the month and year label
+       function updateMonthYearLabel() {
+           const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+           document.getElementById("month-year").innerText = `${months[currentMonth - 1]} ${currentYear}`;
+       }
+
+       // Function to change the current month (navigate)
+       function changeMonth(direction) {
+           currentMonth += direction;
+           
+           // Ensure we wrap around at the boundaries
+           if (currentMonth < 1) {
+               currentMonth = 1;  // Prevent going to December 2022
+               currentYear = 2023;  // Stay in the year 2023
+           } else if (currentMonth > 12) {
+               currentMonth = 12;  // Prevent going to January 2024
+               currentYear = 2023;  // Stay in the year 2023
+           }
+
+           updateCalendar();  // Update the calendar view after changing month
+       }
+
+       // Initial load of the calendar and holidays
+       $(document).ready(function() {
+           searchHolidays();  // Load holidays and calendar on page load
+       });
+
+       
+   </script>
+
+       <!-- Button to go to Calendar -->
+       <a href="/"><button class="btn">Go to Home Page</button></a>
+
+</body>
+</html>
