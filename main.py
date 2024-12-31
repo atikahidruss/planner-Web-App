@@ -1,71 +1,67 @@
 import requests
-from flask import Flask, render_template, request, jsonify
-import matplotlib.pyplot as plt
-from collections import Counter
-from datetime import datetime
-from config import API_KEY, BASE_URL
-
-API_KEY = "6426bb9f-985b-40a8-b07e-b18ce6da0863"
-BASE_URL = "https://holidayapi.com/v1/holidays"
+from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
 
-# Function to fetch holidays
-def fetch_holidays():
-    """Fetch holidays for Malaysia in 2023."""
-    params = {
-        "country": "MY",
-        "year": 2023,
-        "key": API_KEY
-    }
-    response = requests.get(BASE_URL, params=params)
-    
+HOLIDAYS_API_KEY = 'jczwbVvcIbYapoTQPq961w==E7utC5bmVf1oFqe0'
+HOLIDAYS_BASE_URL = 'https://api.api-ninjas.com/v1/holidays'
+
+NEWS_API_KEY = '4aa5cdf8a3854c278d1f51844ad53692'
+NEWS_BASE_URL = 'https://newsapi.org/v2/everything'
+
+
+def fetch_holidays(year):
+    country = 'MY'
+    api_url = f'{HOLIDAYS_BASE_URL}?country={country}&year={year}'
+    headers = {'X-Api-Key': HOLIDAYS_API_KEY}
+    response = requests.get(api_url, headers=headers)
+
     if response.status_code == 200:
-        data = response.json()
-        holidays = data.get("holidays", [])
-        return holidays
+        holidays = response.json()
+        return [{'name': holiday.get('name'), 'date': holiday.get('date')} for holiday in holidays]
     else:
-        print(f"Error: {response.status_code}")
+        print(f"Error fetching holidays: {response.status_code}")
         return []
 
-# Route to handle holiday search (AJAX)
-@app.route("/search", methods=["GET"])
-def search():
-    search_query = request.args.get("search", "").lower()
-    holidays = fetch_holidays()
 
-    # Filter holidays based on search query
-    if search_query:
-        holidays = [holiday for holiday in holidays if search_query in holiday["name"].lower() or search_query in holiday["country"].lower()]
+def fetch_news(year, month):
+    country = "Malaysia"
+    date_prefix = f"{year}-{str(month).zfill(2)}"
+    api_url = f"{NEWS_BASE_URL}?q={country}&from={date_prefix}-01&to={date_prefix}-31&pageSize=100"
+    headers = {"Authorization": f"Bearer {NEWS_API_KEY}"}
+    response = requests.get(api_url, headers=headers)
 
-    # Return filtered holidays as JSON response
-    return jsonify(holidays)
+    if response.status_code == 200:
+        articles = response.json().get("articles", [])
+        news_by_date = {}
+        for article in articles:
+            published_date = article.get("publishedAt", "").split("T")[0]
+            if published_date:
+                news_by_date[published_date] = {
+                    "url": article.get("url")
+                }
+        return news_by_date
+    else:
+        print(f"Error fetching news: {response.status_code}")
+        return {}
 
-# Route to render payroll page (set as home page)
-@app.route("/", methods=["GET", "POST"])
-def home():
-    if request.method == "POST":
-        # Get input values from the form
-        name = request.form.get("name")
-        role = request.form.get("role")
-        total_days = int(request.form.get("total_days"))
-        weekends = int(request.form.get("weekends"))
-        holidays = int(request.form.get("holidays"))
 
-        # Calculate total working days
-        total_working_days = total_days - weekends - holidays
+@app.route("/holidays/<int:year>")
+def holidays(year):
+    holiday_data = fetch_holidays(year)
+    return jsonify({'holidays': holiday_data})
 
-        # Calculate salary
-        salary = total_working_days * 100  # RM100 per day of work
 
-        return render_template("payroll.html", salary=salary, total_working_days=total_working_days)
+@app.route("/news/<int:year>/<int:month>")
+def news(year, month):
+    news_data = fetch_news(year, month)
+    return jsonify({'news': news_data})
 
-    return render_template("payroll.html")
 
-# Route to render holidays (calendar)
-@app.route("/holidays")
-def holidays():
-    return render_template("holidays.html")
+@app.route("/")
+def default():
+    return render_template("calendar.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)

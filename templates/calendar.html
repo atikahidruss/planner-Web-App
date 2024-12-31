@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Calendar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Shrikhand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            padding: 20px;
+            background-color: #fff9f0;
+        }
+
+        h1 {
+            font-family: 'Shrikhand', sans-serif;
+            text-align: center;
+            font-size: 3em;
+            color: #d1b9dc;
+            text-shadow: 2px 2px 4px #000000;
+        }
+
+        #calendar-container {
+            padding: 2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #fff9f0;
+        }
+
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .day {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .holiday {
+            background-color: #d1b9dc;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .day-number {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .news {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .news a {
+            text-decoration: none;
+            color: #007BFF;
+            font-size: 14px;
+        }
+
+        .empty {
+            visibility: hidden;
+        }
+
+        #month-year {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .navigation-btns {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 5px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #calendar-selector {
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Calendar</h1>
+
+    <div id="calendar-selector">
+        <label for="year-select">Choose Year:</label>
+        <select id="year-select" onchange="changeYear()">
+            <option value="2021">2021</option>
+            <option value="2022">2022</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025" selected>2025</option>
+        </select>
+    </div>
+
+    <div id="calendar-container">
+        <div class="navigation-btns">
+            <button class="btn" onclick="changeMonth(-1)">Previous</button>
+            <div id="month-year"></div>
+            <button class="btn" onclick="changeMonth(1)">Next</button>
+        </div>
+        <div id="calendar"></div>
+    </div>
+
+    <script>
+        let currentMonth = 1;
+        let currentYear = 2025;
+        let holidays = [];
+        let newsData = {};
+
+        function updateCalendar() {
+            let calendarContainer = document.getElementById("calendar");
+            calendarContainer.innerHTML = "";
+            updateMonthYearLabel();
+
+            let firstDay = new Date(currentYear, currentMonth - 1, 1);
+            let lastDay = new Date(currentYear, currentMonth, 0);
+            let daysInMonth = lastDay.getDate();
+
+            let currentDay = firstDay.getDay();
+
+            for (let i = 0; i < currentDay; i++) {
+                calendarContainer.innerHTML += '<div class="day empty"></div>';
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                let dayElement = document.createElement("div");
+                dayElement.classList.add("day");
+                let dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                let link = newsData[dateStr]?.url ? `<a href="${newsData[dateStr].url}" target="_blank">View News</a>` : "";
+
+                dayElement.innerHTML = `
+                    <div class="day-number">${i}</div>
+                    <div class="news">${link}</div>
+                `;
+
+                holidays.forEach(holiday => {
+                    let holidayDate = new Date(holiday.date);
+                    if (holidayDate.getDate() === i && holidayDate.getMonth() === currentMonth - 1) {
+                        let holidayElement = document.createElement("div");
+                        holidayElement.classList.add("holiday");
+                        holidayElement.innerText = holiday.name;
+                        dayElement.appendChild(holidayElement);
+                    }
+                });
+
+                calendarContainer.appendChild(dayElement);
+            }
+        }
+
+        function updateMonthYearLabel() {
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById("month-year").innerText = `${months[currentMonth - 1]} ${currentYear}`;
+        }
+
+        function fetchNews() {
+            $.ajax({
+                url: `/news/${currentYear}/${currentMonth}`,
+                method: "GET",
+                success: function(data) {
+                    newsData = data.news;
+                    updateCalendar();
+                },
+                error: function() {
+                    alert("Failed to fetch news.");
+                }
+            });
+        }
+
+        function fetchHolidays(year) {
+            $.ajax({
+                url: `/holidays/${year}`,
+                method: "GET",
+                success: function(data) {
+                    holidays = data.holidays;
+                    updateCalendar();
+                }
+            });
+        }
+
+        function changeMonth(direction) {
+            currentMonth += direction;
+
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear -= 1;
+            } else if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear += 1;
+            }
+
+            fetchNews();
+        }
+
+        function changeYear() {
+            const selectedYear = document.getElementById("year-select").value;
+            currentYear = parseInt(selectedYear);
+            fetchHolidays(currentYear);
+            fetchNews();
+        }
+
+        $(document).ready(function() {
+            fetchHolidays(currentYear);
+            fetchNews();
+        });
+    </script>
+</body>
+</html>
