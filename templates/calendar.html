@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Shrikhand&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+/* General Styles */
+        body {
+            font-family: 'DM Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #faf8f2;
+            color: #333;
+        }
+
+        h1 {
+            font-family: 'Shrikhand', sans-serif;
+            text-align: center;
+            font-size: 3em;
+            color: #a67b5b;
+            margin-top: 20px;
+        }
+
+        /* Layout and Grid Styles */
+        .planner-container {
+            width: 110em; /* Set a large width for the container */
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 3fr 1fr; /* Calendar (left) and Sidebar (right) */
+            grid-template-rows: auto; /* Rows are created automatically */
+            gap: 20px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header for Calendar Navigation */
+        .month-header {
+            grid-column: 1 / span 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .month-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #a67b5b;
+        }
+
+        .month-header button {
+            font-size: 1em;
+            padding: 5px 10px;
+            border: none;
+            background-color: #f3e9dd;
+            color: #a67b5b;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .month-header button:hover {
+            background-color: #f0dcca;
+        }
+
+        /* Sidebar Sections: Top Priorities */
+        .priority-list {
+            grid-column: 2 / 3; /* Right column */
+            grid-row: 1 / 2; /* First row */
+            background-color: #faf4ee;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            height: auto;
+        }
+
+        .priority-list h2 {
+            font-size: 18px;
+            color: #a67b5b;
+            margin-bottom: 10px;
+        }
+
+        .priority-list textarea {
+            width: 100%;
+            height: 200px;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            background: none;
+            resize: none;
+            padding: 5px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* Sidebar Sections: Goals */
+        .goals-section {
+            grid-column: 2 / 3; /* Align with Notes and Top Priorities */
+            grid-row: 2 / 3; /* Below Top Priorities */
+            background-color: #faf4ee;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            height: auto;
+        }
+
+        .goals-section h2 {
+            font-size: 18px;
+            color: #a67b5b;
+            margin-bottom: 10px;
+        }
+
+        .goals-section textarea {
+            width: 100%;
+            height: 200px;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            background: none;
+            resize: none;
+            padding: 5px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        /* Sidebar Sections: Notes */
+        .notes-section {
+            grid-column: 2 / 3; /* Right column */
+            grid-row: 3 / 4; /* Below Goals */
+            background-color: #faf4ee;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            height: auto;
+        }
+
+        .notes-section h2 {
+            font-size: 18px;
+            color: #a67b5b;
+            margin-bottom: 10px;
+        }
+
+        .notes-section textarea {
+            width: 100%;
+            height: calc(100% - 40px);
+            font-size: 14px;
+            border: none;
+            outline: none;
+            background: none;
+            resize: none;
+            padding: 5px;
+        }
+
+        /* Calendar Grid */
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        /* Day Cells in the Calendar */
+        .day {
+            background-color: #fdfcfb;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: left;
+            padding: 10px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .day:hover {
+            background-color: #f6f1eb;
+        }
+
+        .day-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #a67b5b;
+        }
+
+        .financial, .task {
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Modal and Overlay for Input */
+        #modal, #overlay {
+            display: none;
+        }
+
+        #modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monthly Planner</h1>
+
+    <div class="planner-container">
+        <!-- Calendar Section -->
+        <div>
+            <div class="month-header">
+                <button onclick="changeMonth(-1)">Previous</button>
+                <div class="month-display" id="month-year"></div>
+                <button onclick="changeMonth(1)">Next</button>
+            </div>
+            <div class="calendar" id="calendar"></div>
+        </div>
+
+        <!-- Top Priorities Section -->
+        <div class="priority-list">
+            <h2>Top Priorities</h2>
+            <textarea id="priorities" placeholder="List your top priorities here..."></textarea>
+        </div>
+    </div>
+
+        <!-- Goals Section -->
+        <div class="goals-section">
+            <h2>Goals</h2>
+            <textarea id="goals" placeholder="Set your goals for this month..."></textarea>
+        </div>
+    </div>
+
+        <!-- Notes Section -->
+    <div class="notes-section">
+        <h2>Notes</h2>
+        <textarea id="notes" placeholder="Write your notes here..."></textarea>
+    </div>
+
+    <div id="modal">
+        <h2 id="modal-title">Add Data</h2>
+        <form id="data-form">
+            <label for="financial">Financial Update:</label>
+            <input type="text" id="financial" placeholder="E.g., Grocery - $20" />
+            <label for="task">Task:</label>
+            <input type="text" id="task" placeholder="E.g., Finish report" />
+            <button type="submit">Save</button>
+        </form>
+        <button onclick="closeModal()">Close</button>
+    </div>
+    <div id="overlay" onclick="closeModal()"></div>
+
+    <script>
+        let currentMonth = new Date().getMonth() + 1;
+        let currentYear = new Date().getFullYear();
+        let holidays = [];
+        let newsData = {};
+        let dataStore = {};
+
+        function updateCalendar() {
+            const calendarContainer = document.getElementById("calendar");
+            calendarContainer.innerHTML = "";
+
+            const firstDay = new Date(currentYear, currentMonth - 1, 1);
+            const lastDay = new Date(currentYear, currentMonth, 0);
+            const daysInMonth = lastDay.getDate();
+
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June", 
+                "July", "August", "September", "October", "November", "December"
+            ];
+
+            document.getElementById("month-year").innerText = `${monthNames[currentMonth - 1]} ${currentYear}`;
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+                const day = document.createElement("div");
+                day.className = "day";
+                day.innerHTML = `
+                    <div class="day-header">${i}</div>
+                    ${(holidays.find(h => h.date === dateStr) || {}).name ? `<div class="holiday">${(holidays.find(h => h.date === dateStr) || {}).name}</div>` : ''}
+                    ${(newsData[dateStr]?.title) ? `<a href="${newsData[dateStr].url}" target="_blank" class="news-link">${newsData[dateStr].title}</a>` : ''}
+                    ${(dataStore[dateStr]?.financial || []).map(f => `<div class="financial">${f}</div>`).join("")}
+                    ${(dataStore[dateStr]?.tasks || []).map(t => `<div class="task">${t}</div>`).join("")}
+                `;
+                day.onclick = () => openModal(dateStr);
+                calendarContainer.appendChild(day);
+            }
+        }
+
+        function openModal(date) {
+            document.getElementById("modal").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById("modal-title").innerText = `Add Data for ${date}`;
+            document.getElementById("data-form").onsubmit = function (event) {
+                event.preventDefault();
+                const financial = document.getElementById("financial").value;
+                const task = document.getElementById("task").value;
+
+                if (!dataStore[date]) {
+                    dataStore[date] = { financial: [], tasks: [] };
+                }
+                if (financial) dataStore[date].financial.push(financial);
+                if (task) dataStore[date].tasks.push(task);
+
+                closeModal();
+                updateCalendar();
+            };
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("financial").value = "";
+            document.getElementById("task").value = "";
+        }
+
+        function fetchHolidays(year) {
+            $.ajax({
+                url: `/holidays/${year}`,
+                method: "GET",
+                success: function (data) {
+                    holidays = data.holidays;
+                    updateCalendar();
+                },
+                error: function () {
+                    alert("Failed to fetch holidays.");
+                }
+            });
+        }
+
+        function fetchNews() {
+            $.ajax({
+                url: `/news/${currentYear}/${currentMonth}`,
+                method: "GET",
+                success: function (data) {
+                    newsData = data.news;
+                    updateCalendar();
+                },
+                error: function () {
+                    alert("Failed to fetch news.");
+                }
+            });
+        }
+
+        function changeMonth(direction) {
+            saveData(); // Save current month's data before switching
+
+            currentMonth += direction;
+            if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear -= 1;
+                fetchHolidays(currentYear);
+            } else if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear += 1;
+                fetchHolidays(currentYear);
+            }
+            fetchNews();
+            updateUI(); // Update UI with new month's data
+            updateCalendar(); // Update calendar UI
+        }
+
+        function updateUI() {
+            const key = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+            const monthData = dataStore[key] || { notes: '', priorities: '', goals: '' };
+
+            // Update UI fields with data for the current month
+            document.getElementById('notes').value = monthData.notes;
+            document.getElementById('priorities').value = monthData.priorities;
+            document.getElementById('goals').value = monthData.goals;
+        }
+
+        function saveData() {
+            const key = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+            if (!dataStore[key]) {
+                dataStore[key] = { notes: '', priorities: '', goals: '' };
+            }
+
+            // Save data from UI fields to the object
+            dataStore[key].notes = document.getElementById('notes').value;
+            dataStore[key].priorities = document.getElementById('priorities').value;
+            dataStore[key].goals = document.getElementById('goals').value;
+        }
+
+        // Attach event listeners to save data on input
+        document.getElementById('notes').addEventListener('input', saveData);
+        document.getElementById('priorities').addEventListener('input', saveData);
+        document.getElementById('goals').addEventListener('input', saveData);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI(); // Load initial data for the current month
+        });
+
+        // Fetch holidays when the page loads
+        $(document).ready(function() {
+            fetchHolidays(currentYear); // Fetch holidays for the initial year
+            updateUI();
+            updateCalendar();
+        });
+    </script>
+</body>
+</html>
