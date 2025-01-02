@@ -2,7 +2,7 @@
 
 ## **Purpose**
 
-The **Holiday Planner Web Application** is a calendar-based application that helps users plan and organize their monthly schedule. It integrates multiple features, including:
+The **Monthly Planner Web Application** is a calendar-based application that helps users plan and organize their monthly schedule. It integrates multiple features, including:
 - Displaying holidays dynamically based on the selected year.
 - Adding financial updates, tasks, and notes specific to each month.
 - Setting monthly priorities and goals.
