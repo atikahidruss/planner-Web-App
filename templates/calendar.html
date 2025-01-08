@@ -27,7 +27,7 @@
 
         /* Layout and Grid Styles */
         .planner-container {
-            width: 110em; /* Set a large width for the container */
+            width: 95%; /* Set a large width for the container */
             margin: 0 auto;
             padding: 20px;
             display: grid;
@@ -215,6 +215,7 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+
     </style>
 </head>
 <body>
@@ -280,7 +281,7 @@
             const daysInMonth = lastDay.getDate();
 
             const monthNames = [
-                "January", "February", "March", "April", "May", "June", 
+                "January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"
             ];
 
@@ -290,10 +291,19 @@
                 const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
                 const day = document.createElement("div");
                 day.className = "day";
+
+                // Generate news list
+                const newsItems = (newsData[dateStr] || []).map(news =>
+                    `<li><a href="${news.url}" target="_blank" class="news-link">${news.title}</a></li>`
+                ).join("");
+
+                // Wrap newsItems in a list if there are any news articles
+                const newsList = newsItems ? `<ul class="news-list">${newsItems}</ul>` : '';
+
                 day.innerHTML = `
                     <div class="day-header">${i}</div>
                     ${(holidays.find(h => h.date === dateStr) || {}).name ? `<div class="holiday">${(holidays.find(h => h.date === dateStr) || {}).name}</div>` : ''}
-                    ${(newsData[dateStr]?.title) ? `<a href="${newsData[dateStr].url}" target="_blank" class="news-link">${newsData[dateStr].title}</a>` : ''}
+                    ${newsList}
                     ${(dataStore[dateStr]?.financial || []).map(f => `<div class="financial">${f}</div>`).join("")}
                     ${(dataStore[dateStr]?.tasks || []).map(t => `<div class="task">${t}</div>`).join("")}
                 `;
@@ -301,6 +311,7 @@
                 calendarContainer.appendChild(day);
             }
         }
+
 
         function openModal(date) {
             document.getElementById("modal").style.display = "block";
