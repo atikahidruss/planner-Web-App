@@ -3,10 +3,10 @@ from flask import Flask, render_template, jsonify
 
 app = Flask(__name__)
 
-HOLIDAYS_API_KEY = 'jczwbVvcIbYapoTQPq961w==E7utC5bmVf1oFqe0'
+HOLIDAYS_API_KEY = '<YOUR HOLIDAY API KEY>'
 HOLIDAYS_BASE_URL = 'https://api.api-ninjas.com/v1/holidays'
 
-NEWS_API_KEY = '84936d757f71e53eb98cdd42bb4bb240'
+NEWS_API_KEY = '<YOUR NEWS API KEY>'
 NEWS_BASE_URL = 'https://gnews.io/api/v4/search'
 
 
