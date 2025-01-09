@@ -113,6 +113,3 @@ The application leverages APIs to fetch holidays and news dynamically, providing
 ## **License**
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
----
-
-This structure provides clarity and is user-friendly. Let me know if you’d like to make further adjustments! 😊
